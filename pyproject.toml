@@ -1,0 +1,10 @@
+[project]
+name = "flyin"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyparsing>=3.3.2",
+    "regex>=2026.7.10",
+]
