@@ -3,6 +3,9 @@ from parse import parse_file
 # from utils import back_color_dic, print_color, text_color_dic
 
 parse_res = parse_file("test.txt")
+if parse_res is None:
+    print("Aborting")
+    exit(1)
 for k in parse_res:
     print(k)
 # for back_color, _ in back_color_dic.items():
