@@ -1,8 +1,9 @@
-from parse import parse_file
+from parse import Parser
 
 # from utils import back_color_dic, print_color, text_color_dic
 
-parse_res = parse_file("test.txt")
+parser = Parser()
+parse_res = parser.parse_file("test.txt")
 if parse_res is None:
     print("Aborting")
     exit(1)
