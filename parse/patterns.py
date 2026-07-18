@@ -1,10 +1,22 @@
-from pyparsing import Group, OneOrMore, Optional, Regex, Suppress, Word, alphas, nums, Keyword
-
+from pyparsing import (
+    Combine,
+    Group,
+    Keyword,
+    OneOrMore,
+    Optional,
+    Regex,
+    Suppress,
+    Word,
+    alphas,
+    nums,
+    one_of,
+)
 
 key = Word(alphas + "_" + alphas)
 string = Word(alphas)
 zone_name = Regex(r"[^\s-]+")
-number = Word(nums)
+signs = one_of("+ -")
+number = Combine(Optional(signs) + Word(nums))
 separator = Suppress(":")
 key_value = key + Suppress("=") + (string | number)
 dct = Group(key_value)

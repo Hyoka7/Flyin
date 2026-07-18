@@ -1,27 +1,32 @@
 from pydantic import ValidationError
-from models import Drone, Connection, Zone
+from pyparsing import ParseException
+
+from models import Connection, Drone, Zone
+
 from .patterns import connection_parse_pattern, zone_parse_pattern
 
 
-class Parser():
-    def parser(self,text: str, line_num: int, is_first:bool):
+class Parser:
+    def parse_line(self, text: str, line_num: int, is_first: bool):
         if text.startswith("#") or text == "":
-            pass
+            return None
         if is_first:
-            if not text.startswith("nb_drones:"):
-                raise ValueError()
             try:
                 key, value = text.split(":")
                 if key != "nb_drones":
                     raise ValueError()
                 else:
                     return {key: int(value)}
-            except Exception:
-                print(f"Parse error on line {line_num}: First line must be nb_drones: value")
+            except ValueError:
+                print(
+                    f"Parse error on line {line_num}: First line must be nb_drones: value"
+                )
                 return False
         else:
             try:
-                parse_res = zone_parse_pattern.parseString(text, parse_all=True).as_list()
+                parse_res = zone_parse_pattern.parse_string(
+                    text, parse_all=True
+                ).as_list()
                 metadata = dict(parse_res[4:])
                 if parse_res[0] in {"start_hub", "end_hub"}:
                     metadata.pop("max_drones", None)
@@ -33,10 +38,12 @@ class Parser():
                     "metadata": metadata
                 }
                 return parse_dict
-            except Exception:
+            except ParseException:
                 pass
             try:
-                parse_res = connection_parse_pattern.parseString(text, parse_all=True).as_list()
+                parse_res = connection_parse_pattern.parse_string(
+                    text, parse_all=True
+                ).as_list()
                 metadata = dict(parse_res[3:])
                 parse_dict = {
                     "key": parse_res[0],
@@ -45,8 +52,8 @@ class Parser():
                     "metadata": metadata
                 }
                 return parse_dict
-            except Exception:
-                print(f"parse error on line {line_num}: Bad Config")
+            except ParseException as err:
+                print(f"parse error on line {line_num} col {err.col}: {err.msg}")
                 return False
 
 
@@ -135,22 +142,25 @@ class Parser():
     def parse_file(self,path: str):
         results = []
         is_first = True
-        with open(path, "r", encoding="utf-8") as f:
-            for line_num,line in enumerate(f,start=1):
-                line = line.strip()
-                if not line:
-                    continue
-                if line.startswith("#"):
-                    continue
-                result = self.parser(line,line_num, is_first)
-                if result is False:
-                    return None
-                res_validate = self.validate_parse_result(line_num,result)
-                if not res_validate:
-                    return None
-                results.append(res_validate)
-                line_num += 1
-                is_first = False
-        if self.validate_all_result(results) is None:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                for line_num, line in enumerate(f, start=1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("#"):
+                        continue
+                    result = self.parse_line(line, line_num, is_first)
+                    if result is False:
+                        return None
+                    res_validate = self.validate_parse_result(line_num, result)
+                    if not res_validate:
+                        return None
+                    results.append(res_validate)
+                    is_first = False
+            if self.validate_all_result(results) is None:
+                return None
+            return results
+        except OSError as err:
+            print(f"Error while opening file: {err}")
             return None
-        return results
