@@ -1,8 +1,11 @@
 # import sys
 
+import sys
+
 from graph import GraphHandler
 from models import Connection, Drone, Zone
 from parse import Parser
+from simulator import Simulator
 
 
 def main(
@@ -16,10 +19,13 @@ if __name__ == "__main__":
     result = main("test.txt")
     handler = GraphHandler(result)
     handler.construct()
-    res_cost = handler.dijkstra_cost()
-    res_path = handler.dijkstra_path()
-    print(res_cost)
-    print(*res_path)
+    if handler.dijkstra_path() == []:
+        print("Can't reach goal.")
+        print("Aborting")
+        sys.exit(1)
+    sim = Simulator(handler)
+    print(sim.run_drone())
+
     # if result is None:
     #     print("Aborting")
     #     sys.exit(1)

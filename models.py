@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, model_validator, ConfigDict
 from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Drone(BaseModel):
@@ -25,7 +26,7 @@ class Zone(BaseModel):
     metadata: ZoneMetadata
     
     @model_validator(mode="after")
-    def zone_name_validate(self):
+    def zone_name_validate(self) -> "Zone":
         valid_name = ["start_hub", "end_hub", "hub"]
         if self.key not in valid_name:
             raise ValueError("key is unknown")

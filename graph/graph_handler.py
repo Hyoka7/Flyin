@@ -2,19 +2,24 @@ from collections import defaultdict
 from heapq import heappop, heappush
 
 from models import Connection, Zone, ZoneTypes
+from utils import get_sorted_key
 
 
 class GraphHandler:
     def __init__(self, data: list):
         self.data: list = data
         self.zones: dict[Zone] = {}
+        self.connection = {}
         self.neighbors = defaultdict(list)
+
 
     def construct(self):
         for d in self.data:
             if isinstance(d, Connection):
                 self.neighbors[d.from_].append(d)
                 self.neighbors[d.to].append(d)
+                key = get_sorted_key(d.from_, d.to)
+                self.connection[key] = d
             elif isinstance(d, Zone):
                 self.zones[d.name] = d
                 if d.key == "start_hub":
