@@ -9,4 +9,7 @@ hub: tunnelB 7 4 [zone=normal color=red]
 hub: obstacleX 5 5 [zone=blocked color=gray]
 connection: hub-roof1
 connection: roof1-roof2
+connection: roof1-corridorA
+connection: corridorA-tunnelB
+connection: tunnelB-goal
 connection: roof2-goal

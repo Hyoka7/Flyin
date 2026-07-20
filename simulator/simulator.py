@@ -67,7 +67,8 @@ class Simulator:
                     drone.path_index += 1
                 elif self.graph.zones[next_zone].metadata.zone == ZoneTypes.Restricted:
                     if (
-                        zone_reserved[next_zone] > 0
+                        zone_reserved[next_zone] + zone_reserved[next_zone]
+                        >= zone_capacity[next_zone]
                         or path_used[con_key] >= path_capacity[con_key]
                     ):
                         continue
@@ -78,14 +79,16 @@ class Simulator:
                     drone.transit_dest = next_zone
                     move.append(f"D{drone.drone_id}-{cur_zone}-{next_zone}")
                     continue
-                elif self.graph.zones[next_zone].metadata.zone != ZoneTypes.Restricted:
+                else:
                     if (
                         next_zone != self.graph.goal
-                        and zone_occupancy[next_zone] >= zone_capacity[next_zone]
-                    ) or path_used[con_key] > -path_capacity[con_key]:
+                        and zone_occupancy[next_zone] + zone_reserved[next_zone]
+                        >= zone_capacity[next_zone]
+                    ) or path_used[con_key] >= path_capacity[con_key]:
                         continue
                     zone_occupancy[next_zone] += 1
                     zone_occupancy[cur_zone] -= 1
+                    path_used[con_key] += 1
                     move.append(f"D{drone.drone_id}-{next_zone}")
                     drone.path_index += 1
                     if next_zone == self.graph.goal:
@@ -94,4 +97,7 @@ class Simulator:
             self.turn += 1
             if move:
                 print(*move)
+            else:
+                print("Dead Lock Happened!")
+                return None
         return self.turn

@@ -46,11 +46,22 @@ class GraphHandler:
         else:
             return None
 
-    def dijkstra_cost(self):
+    def dijkstra_cost(
+        self,
+        start=None,
+        banned_connection=None,
+        banned_node=None,
+    ):
+        if start is None:
+            start = self.start
+        if banned_connection is None:
+            banned_connection = set()
+        if banned_node is None:
+            banned_node = set()
         dists = {name: float("inf") for name in self.zones}
-        dists[self.start] = 0
+        dists[start] = 0
         pq = []
-        heappush(pq, (0, self.start))
+        heappush(pq, (0, start))
         while pq:
             cur_cost, zone_name = heappop(pq)
             if cur_cost > dists[zone_name]:
@@ -60,6 +71,9 @@ class GraphHandler:
                     zone_name,
                     connection,
                 )
+                con_key = get_sorted_key(zone_name, neighbor)
+                if con_key in banned_connection or neighbor in banned_node:
+                    continue
                 move_cost = self.get_move_cost(neighbor)
                 if move_cost == -1:
                     continue
@@ -75,19 +89,45 @@ class GraphHandler:
                     )
         return dists
 
-    def dijkstra_path(self):
-        dists = self.dijkstra_cost()
-        if dists[self.goal] == float("inf"):
+    def dijkstra_path(
+        self,
+        start=None,
+        end=None,
+        banned_connection=None,
+        banned_node=None,
+    ):
+        if start is None:
+            start = self.start
+        if end is None:
+            end = self.goal
+        if banned_connection is None:
+            banned_connection = set()
+        if banned_node is None:
+            banned_node = set()
+        dists = self.dijkstra_cost(
+            start,
+            banned_connection,
+            banned_node,
+        )
+        if dists[end] == float("inf"):
             return []
-        path = [self.goal]
-        current = self.goal
-        while current != self.start:
+        path = [end]
+        current = end
+        while current != start:
+            found = False
             cur_cost = dists[current]
             move_cost = self.get_move_cost(current)
             for connection in self.neighbors[current]:
                 neighbor = self.get_neighbor_name(current, connection)
+                con_key = get_sorted_key(current, neighbor)
+                if con_key in banned_connection or neighbor in banned_node:
+                    continue
                 if cur_cost - move_cost == dists[neighbor]:
                     current = neighbor
                     path.append(neighbor)
+                    found = True
                     break
+            if not found:
+                return []
+
         return path[::-1]
