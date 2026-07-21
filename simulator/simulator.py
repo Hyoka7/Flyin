@@ -25,17 +25,15 @@ class SimDrone:
 
 
 class Simulator:
-    def __init__(
-        self,
-        graph: GraphHandler,
-    ):
+    def __init__(self, graph: GraphHandler, drone_paths: list[list[str]]):
         self.graph = graph
         self.turn = 0
-        self.drones = [
-            SimDrone(drone_id, self.graph.dijkstra_path())
-            for drone_id in range(1, self.graph.drone_count + 1)
-        ]
+        self.drone_paths = drone_paths
         self.remain_drone = self.graph.drone_count
+        self.drones = [
+            SimDrone(drone_id + 1, self.drone_paths[drone_id])
+            for drone_id in range(self.graph.drone_count)
+        ]
 
     def run_drone(self):
         zone_occupancy = {name: 0 for name in self.graph.zones}
@@ -67,7 +65,7 @@ class Simulator:
                     drone.path_index += 1
                 elif self.graph.zones[next_zone].metadata.zone == ZoneTypes.Restricted:
                     if (
-                        zone_reserved[next_zone] + zone_reserved[next_zone]
+                        zone_occupancy[next_zone] + zone_reserved[next_zone]
                         >= zone_capacity[next_zone]
                         or path_used[con_key] >= path_capacity[con_key]
                     ):
