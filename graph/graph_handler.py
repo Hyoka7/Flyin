@@ -59,12 +59,17 @@ class GraphHandler:
         if banned_node is None:
             banned_node = set()
         dists = {name: float("inf") for name in self.zones}
+        priority_scores = {name: float("inf") for name in self.zones}
         dists[start] = 0
+        priority_scores[start] = 0
         pq = []
-        heappush(pq, (0, start))
+        heappush(pq, (0, 0, start))
         while pq:
-            cur_cost, zone_name = heappop(pq)
-            if cur_cost > dists[zone_name]:
+            cur_cost, priority_count, zone_name = heappop(pq)
+            if (cur_cost, priority_count) != (
+                dists[zone_name],
+                priority_scores[zone_name],
+            ):
                 continue
             for connection in self.neighbors[zone_name]:
                 neighbor = self.get_neighbor_name(
@@ -74,20 +79,86 @@ class GraphHandler:
                 con_key = get_sorted_key(zone_name, neighbor)
                 if con_key in banned_connection or neighbor in banned_node:
                     continue
+                new_priority_count = priority_count
+                if self.zones[neighbor].metadata.zone == ZoneTypes.Priority:
+                    new_priority_count -= 1
                 move_cost = self.get_move_cost(neighbor)
                 if move_cost == -1:
                     continue
                 new_cost = cur_cost + move_cost
-                if new_cost < dists[neighbor]:
+                if (new_cost, new_priority_count) < (
+                    dists[neighbor],
+                    priority_scores[neighbor],
+                ):
                     dists[neighbor] = new_cost
+                    priority_scores[neighbor] = new_priority_count
                     heappush(
                         pq,
                         (
                             new_cost,
+                            new_priority_count,
                             neighbor,
                         ),
                     )
         return dists
+
+    def _dijkstra(
+        self,
+        start=None,
+        banned_connection=None,
+        banned_node=None,
+    ):
+        if start is None:
+            start = self.start
+        if banned_connection is None:
+            banned_connection = set()
+        if banned_node is None:
+            banned_node = set()
+        dists = {name: float("inf") for name in self.zones}
+        priority_scores = {name: float("inf") for name in self.zones}
+        prev = {name: None for name in self.zones}
+        dists[start] = 0
+        priority_scores[start] = 0
+        pq = []
+        heappush(pq, (0, 0, start))
+        while pq:
+            cur_cost, priority_count, zone_name = heappop(pq)
+            if (cur_cost, priority_count) != (
+                dists[zone_name],
+                priority_scores[zone_name],
+            ):
+                continue
+            for connection in self.neighbors[zone_name]:
+                neighbor = self.get_neighbor_name(
+                    zone_name,
+                    connection,
+                )
+                con_key = get_sorted_key(zone_name, neighbor)
+                if con_key in banned_connection or neighbor in banned_node:
+                    continue
+                new_priority_count = priority_count
+                if self.zones[neighbor].metadata.zone == ZoneTypes.Priority:
+                    new_priority_count -= 1
+                move_cost = self.get_move_cost(neighbor)
+                if move_cost == -1:
+                    continue
+                new_cost = cur_cost + move_cost
+                if (new_cost, new_priority_count) < (
+                    dists[neighbor],
+                    priority_scores[neighbor],
+                ):
+                    dists[neighbor] = new_cost
+                    priority_scores[neighbor] = new_priority_count
+                    prev[neighbor] = zone_name
+                    heappush(
+                        pq,
+                        (
+                            new_cost,
+                            new_priority_count,
+                            neighbor,
+                        ),
+                    )
+        return (dists, prev)
 
     def dijkstra_path(
         self,
@@ -104,7 +175,7 @@ class GraphHandler:
             banned_connection = set()
         if banned_node is None:
             banned_node = set()
-        dists = self.dijkstra_cost(
+        dists, prev = self._dijkstra(
             start,
             banned_connection,
             banned_node,
@@ -114,20 +185,8 @@ class GraphHandler:
         path = [end]
         current = end
         while current != start:
-            found = False
-            cur_cost = dists[current]
-            move_cost = self.get_move_cost(current)
-            for connection in self.neighbors[current]:
-                neighbor = self.get_neighbor_name(current, connection)
-                con_key = get_sorted_key(current, neighbor)
-                if con_key in banned_connection or neighbor in banned_node:
-                    continue
-                if cur_cost - move_cost == dists[neighbor]:
-                    current = neighbor
-                    path.append(neighbor)
-                    found = True
-                    break
-            if not found:
+            current = prev[current]
+            if current is None:
                 return []
-
+            path.append(current)
         return path[::-1]

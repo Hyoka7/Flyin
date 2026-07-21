@@ -16,10 +16,12 @@ class Parser:
                 if key != "nb_drones":
                     raise ValueError()
                 else:
+                    if int(value) < 0:
+                        raise ValueError()
                     return {key: int(value)}
             except ValueError:
                 print(
-                    f"Parse error on line {line_num}: First line must be nb_drones: value"
+                    f"Parse error on line {line_num}: First line must be nb_drones: positive value"
                 )
                 return False
         else:

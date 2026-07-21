@@ -6,6 +6,26 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class Drone(BaseModel):
     nb_drones: int = Field(..., gt=0)
 
+class DroneState(str, Enum):
+    AT_ZONE = "at_zone"
+    IN_TRANSIT = "in_transit"
+    DELIVERED = "delivered"
+
+
+class DroneSnapshot:
+    drone_id: int
+    state: DroneState
+    zone: str | None
+    transit_from: str | None
+    transit_to: str | None
+
+
+class TurnSnapShot:
+    turn: int
+    state: DroneState
+    zone: str | None
+
+
 class ZoneTypes(str, Enum):
     Normal = "normal"
     Blocked = "blocked"

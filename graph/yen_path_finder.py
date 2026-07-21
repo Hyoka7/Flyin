@@ -1,5 +1,6 @@
 from heapq import heappop, heappush
 
+from models import ZoneTypes
 from utils import get_sorted_key
 
 from .graph_handler import GraphHandler
@@ -34,6 +35,13 @@ class YenPathFinder:
             cost = self.graph.get_move_cost(path[i])
             cumsum[i] = cumsum[i - 1] + cost
         return cumsum
+
+    def build_priority_count(self, path: list[list[str]]) -> int:
+        return sum(
+            1
+            for zone_name in path[1:]
+            if self.graph.zones[zone_name].metadata.zone == ZoneTypes.Priority
+        )
 
     def find_k_paths(self, k: int):
         if k <= 0:
@@ -70,6 +78,7 @@ class YenPathFinder:
                 if new_path_key in cand_keys:
                     continue
                 cand_keys.add(new_path_key)
+                priority_count = self.build_priority_count(branch_to_goal_path)
                 new_dists = self.graph.dijkstra_cost(
                     branch_node,
                     banned_connection,
@@ -80,11 +89,12 @@ class YenPathFinder:
                     cand_pq,
                     (
                         root_cost + branch_to_goal_cost,
+                        -priority_count,
                         branch_to_goal_path,
                     ),
                 )
             if cand_pq:
-                cost, path = heappop(cand_pq)
+                _, _, path = heappop(cand_pq)
                 fixed_paths.append(path)
             else:
                 break
