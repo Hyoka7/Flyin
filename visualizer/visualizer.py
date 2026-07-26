@@ -293,12 +293,17 @@ class Visualizer:
                     font=("TkDefaultFont", 9),
                     tags=(zone_tag, "zone"),
                 )
+
+            def show_details(
+                _event: tk.Event[tk.Misc],
+                selected: Zone = zone,
+            ) -> None:
+                self.show_zone_details(selected)
+
             self.canvas.tag_bind(
                 zone_tag,
                 "<Button-1>",
-                lambda _event, selected=zone: self.show_zone_details(
-                    selected
-                ),
+                show_details,
             )
 
     def show_zone_details(self, zone: Zone) -> None:

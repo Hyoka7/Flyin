@@ -23,5 +23,14 @@ back_color_dic = {
 }
 
 
-def print_color(txt, color1="yellow", color2="black"):
-    print(back_color_dic[color2], text_color_dic[color1], txt, text_color_dic["end"])
+def print_color(
+    txt: object,
+    color1: str = "yellow",
+    color2: str = "black",
+) -> None:
+    print(
+        back_color_dic[color2],
+        text_color_dic[color1],
+        txt,
+        text_color_dic["end"],
+    )

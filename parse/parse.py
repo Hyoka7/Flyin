@@ -1,3 +1,5 @@
+from typing import Any, Literal
+
 from pydantic import ValidationError
 from pyparsing import ParseException
 
@@ -7,7 +9,12 @@ from .patterns import connection_parse_pattern, zone_parse_pattern
 
 
 class Parser:
-    def parse_line(self, text: str, line_num: int, is_first: bool):
+    def parse_line(
+        self,
+        text: str,
+        line_num: int,
+        is_first: bool,
+    ) -> dict[str, Any] | Literal[False] | None:
         if text.startswith("#") or text == "":
             return None
         if is_first:
@@ -21,7 +28,8 @@ class Parser:
                     return {key: int(value)}
             except ValueError:
                 print(
-                    f"Parse error on line {line_num}: First line must be nb_drones: positive value"
+                    f"Parse error on line {line_num}: "
+                    "First line must be nb_drones: positive value"
                 )
                 return False
         else:
@@ -37,7 +45,7 @@ class Parser:
                     "name": parse_res[1],
                     "x": parse_res[2],
                     "y": parse_res[3],
-                    "metadata": metadata
+                    "metadata": metadata,
                 }
                 return parse_dict
             except ParseException:
@@ -51,25 +59,32 @@ class Parser:
                     "key": parse_res[0],
                     "from_": parse_res[1],
                     "to": parse_res[2],
-                    "metadata": metadata
+                    "metadata": metadata,
                 }
                 return parse_dict
             except ParseException as err:
-                print(f"parse error on line {line_num} col {err.col}: {err.msg}")
+                print(
+                    f"parse error on line {line_num} "
+                    f"col {err.col}: {err.msg}"
+                )
                 return False
 
+    def validate_parse_result(
+        self,
+        line_num: int,
+        data: dict[str, Any],
+    ) -> Drone | Zone | Connection | Literal[False]:
+        try:
+            if "nb_drones" in data:
+                return Drone.model_validate(data)
+            if "from_" in data and "to" in data:
+                return Connection.model_validate(data)
+            return Zone.model_validate(data)
+        except ValidationError as err:
+            message = err.errors()[0]["msg"]
+            print(f"Validation error on line {line_num}, {message}")
+            return False
 
-    def validate_parse_result(self, line_num:int, data: dict):
-            try:
-                if "nb_drones" in data:
-                     return Drone.model_validate(data)
-                if "from_" in data and "to" in data:
-                    return Connection.model_validate(data)
-                return Zone.model_validate(data)
-            except ValidationError as err:
-                print(f"Validation error on line {line_num}, {err.errors()[0]['msg']}")
-                return False
-            
     def validate_all_result(
         self,
         parse_res: list[Drone | Zone | Connection],
@@ -112,14 +127,17 @@ class Parser:
                     f"{result.to}"
                 )
                 return None
-            
+
             if result.from_ == result.to:
                 print(
                     f"Loop detected: {result.from_}-{result.to}"
                 )
                 return None
 
-            connection = tuple(sorted((result.from_, result.to)))
+            connection = (
+                min(result.from_, result.to),
+                max(result.from_, result.to),
+            )
             if connection in connections:
                 print(
                     "Duplicate connection: "
@@ -140,9 +158,11 @@ class Parser:
 
         return parse_res
 
-
-    def parse_file(self,path: str):
-        results = []
+    def parse_file(
+        self,
+        path: str,
+    ) -> list[Drone | Zone | Connection] | None:
+        results: list[Drone | Zone | Connection] = []
         is_first = True
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -153,10 +173,10 @@ class Parser:
                     if line.startswith("#"):
                         continue
                     result = self.parse_line(line, line_num, is_first)
-                    if result is False:
+                    if result is False or result is None:
                         return None
                     res_validate = self.validate_parse_result(line_num, result)
-                    if not res_validate:
+                    if res_validate is False:
                         return None
                     results.append(res_validate)
                     is_first = False

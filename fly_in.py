@@ -6,11 +6,11 @@ from scheduler import Scheduler
 from simulator import Simulator
 
 
-def main(file_path: str, show_gui: bool = False):
+def main(file_path: str, show_gui: bool = False) -> int | None:
     parser = Parser()
     parse_res = parser.parse_file(file_path)
     if parse_res is None:
-        return
+        return None
     handler = GraphHandler(parse_res)
     handler.construct()
 
@@ -28,7 +28,7 @@ def main(file_path: str, show_gui: bool = False):
     drone_paths = scheduler.scheduling(handler.drone_count)
     if not drone_paths:
         print("No available paths")
-        return
+        return None
     simulator = Simulator(handler, drone_paths)
     turns = simulator.run_drone()
     print(turns)

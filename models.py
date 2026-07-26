@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class Drone(BaseModel):
     nb_drones: int = Field(..., gt=0)
 
+
 class DroneState(str, Enum):
     AT_ZONE = "at_zone"
     IN_TRANSIT = "in_transit"
@@ -32,11 +33,13 @@ class ZoneTypes(str, Enum):
     Restricted = "restricted"
     Priority = "priority"
 
+
 class ZoneMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
     zone: ZoneTypes = Field(ZoneTypes.Normal)
     color: str | None = Field(None)
     max_drones: int = Field(1, ge=1)
+
 
 class Zone(BaseModel):
     key: str
@@ -44,18 +47,20 @@ class Zone(BaseModel):
     x: int
     y: int
     metadata: ZoneMetadata
-    
+
     @model_validator(mode="after")
     def zone_name_validate(self) -> "Zone":
         valid_name = ["start_hub", "end_hub", "hub"]
         if self.key not in valid_name:
             raise ValueError("key is unknown")
         return self
-    
+
+
 class ConnectionMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     max_link_capacity: int = Field(1, ge=1)
+
 
 class Connection(BaseModel):
     model_config = ConfigDict(extra="forbid")

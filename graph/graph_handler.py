@@ -1,19 +1,21 @@
 from collections import defaultdict
 from heapq import heappop, heappush
 
-from models import Connection, Zone, ZoneTypes
+from models import Connection, Drone, Zone, ZoneTypes
 from utils import get_sorted_key
 
 
 class GraphHandler:
-    def __init__(self, data: list):
-        self.data: list = data
-        self.zones: dict[Zone] = {}
-        self.connection = {}
-        self.neighbors = defaultdict(list)
+    def __init__(self, data: list[Drone | Zone | Connection]):
+        self.data = data
+        self.zones: dict[str, Zone] = {}
+        self.connection: dict[tuple[str, str], Connection] = {}
+        self.neighbors: defaultdict[str, list[Connection]] = defaultdict(list)
+        self.start = ""
+        self.goal = ""
+        self.drone_count = 0
 
-
-    def construct(self):
+    def construct(self) -> None:
         for d in self.data:
             if isinstance(d, Connection):
                 self.neighbors[d.from_].append(d)
@@ -29,7 +31,7 @@ class GraphHandler:
             else:
                 self.drone_count = d.nb_drones
 
-    def get_move_cost(self, zone_name: str):
+    def get_move_cost(self, zone_name: str) -> int:
         zone = self.zones[zone_name]
 
         if zone.metadata.zone == ZoneTypes.Restricted:
@@ -38,7 +40,11 @@ class GraphHandler:
             return 1
         return -1
 
-    def get_neighbor_name(self, current, connection: Connection):
+    def get_neighbor_name(
+        self,
+        current: str,
+        connection: Connection,
+    ) -> str | None:
         if connection.from_ == current:
             return connection.to
         elif connection.to == current:
@@ -48,10 +54,10 @@ class GraphHandler:
 
     def dijkstra_cost(
         self,
-        start=None,
-        banned_connection=None,
-        banned_node=None,
-    ):
+        start: str | None = None,
+        banned_connection: set[tuple[str, str]] | None = None,
+        banned_node: set[str] | None = None,
+    ) -> dict[str, float]:
         if start is None:
             start = self.start
         if banned_connection is None:
@@ -62,7 +68,7 @@ class GraphHandler:
         priority_scores = {name: float("inf") for name in self.zones}
         dists[start] = 0
         priority_scores[start] = 0
-        pq = []
+        pq: list[tuple[float, float, str]] = []
         heappush(pq, (0, 0, start))
         while pq:
             cur_cost, priority_count, zone_name = heappop(pq)
@@ -76,6 +82,8 @@ class GraphHandler:
                     zone_name,
                     connection,
                 )
+                if neighbor is None:
+                    continue
                 con_key = get_sorted_key(zone_name, neighbor)
                 if con_key in banned_connection or neighbor in banned_node:
                     continue
@@ -104,10 +112,10 @@ class GraphHandler:
 
     def _dijkstra(
         self,
-        start=None,
-        banned_connection=None,
-        banned_node=None,
-    ):
+        start: str | None = None,
+        banned_connection: set[tuple[str, str]] | None = None,
+        banned_node: set[str] | None = None,
+    ) -> tuple[dict[str, float], dict[str, str | None]]:
         if start is None:
             start = self.start
         if banned_connection is None:
@@ -116,10 +124,12 @@ class GraphHandler:
             banned_node = set()
         dists = {name: float("inf") for name in self.zones}
         priority_scores = {name: float("inf") for name in self.zones}
-        prev = {name: None for name in self.zones}
+        prev: dict[str, str | None] = {
+            name: None for name in self.zones
+        }
         dists[start] = 0
         priority_scores[start] = 0
-        pq = []
+        pq: list[tuple[float, float, str]] = []
         heappush(pq, (0, 0, start))
         while pq:
             cur_cost, priority_count, zone_name = heappop(pq)
@@ -133,6 +143,8 @@ class GraphHandler:
                     zone_name,
                     connection,
                 )
+                if neighbor is None:
+                    continue
                 con_key = get_sorted_key(zone_name, neighbor)
                 if con_key in banned_connection or neighbor in banned_node:
                     continue
@@ -162,11 +174,11 @@ class GraphHandler:
 
     def dijkstra_path(
         self,
-        start=None,
-        end=None,
-        banned_connection=None,
-        banned_node=None,
-    ):
+        start: str | None = None,
+        end: str | None = None,
+        banned_connection: set[tuple[str, str]] | None = None,
+        banned_node: set[str] | None = None,
+    ) -> list[str]:
         if start is None:
             start = self.start
         if end is None:
@@ -183,9 +195,10 @@ class GraphHandler:
         if dists[end] == float("inf"):
             return []
         path = [end]
-        current = end
-        while current != start:
-            current = prev[current]
+        current: str | None = end
+        while current is not None and current != start:
+            next_current = prev[current]
+            current = next_current
             if current is None:
                 return []
             path.append(current)

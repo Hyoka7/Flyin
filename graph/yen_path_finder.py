@@ -14,8 +14,8 @@ class YenPathFinder:
         self,
         fixed_path: list[list[str]],
         curr_path: list[str],
-    ):
-        banned = set()
+    ) -> set[tuple[str, str]]:
+        banned: set[tuple[str, str]] = set()
         curr_len = len(curr_path)
         for fixed in fixed_path:
             if len(fixed) <= curr_len:
@@ -29,29 +29,29 @@ class YenPathFinder:
                 )
         return banned
 
-    def build_cumsum(self, path: list[str]):
+    def build_cumsum(self, path: list[str]) -> list[int]:
         cumsum = [0] * len(path)
         for i in range(1, len(path)):
             cost = self.graph.get_move_cost(path[i])
             cumsum[i] = cumsum[i - 1] + cost
         return cumsum
 
-    def build_priority_count(self, path: list[list[str]]) -> int:
+    def build_priority_count(self, path: list[str]) -> int:
         return sum(
             1
             for zone_name in path[1:]
             if self.graph.zones[zone_name].metadata.zone == ZoneTypes.Priority
         )
 
-    def find_k_paths(self, k: int):
+    def find_k_paths(self, k: int) -> list[list[str]]:
         if k <= 0:
             return []
         original_path = self.graph.dijkstra_path()
         if original_path == []:
             return []
         fixed_paths = [original_path]
-        cand_pq = []
-        cand_keys = set()
+        cand_pq: list[tuple[float, int, list[str]]] = []
+        cand_keys: set[tuple[str, ...]] = set()
         cand_keys.add(tuple(original_path))
         while len(fixed_paths) < k:
             previous_path = fixed_paths[-1]
