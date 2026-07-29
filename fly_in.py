@@ -1,4 +1,4 @@
-import argparse
+import os
 
 from graph import GraphHandler, YenPathFinder
 from parse import Parser
@@ -6,22 +6,18 @@ from scheduler import Scheduler
 from simulator import Simulator
 
 
-def main(file_path: str, show_gui: bool = False) -> int | None:
+def main() -> int | None:
     parser = Parser()
+    try:
+        args = parser.argument_parse()
+    except Exception as err:
+        print(f"Parser Error: {err}")
+    file_path = args.map_file
     parse_res = parser.parse_file(file_path)
     if parse_res is None:
         return None
     handler = GraphHandler(parse_res)
     handler.construct()
-
-    if show_gui:
-        from visualizer import Visualizer, VisualizerUnavailableError
-
-        try:
-            Visualizer(handler).run()
-        except VisualizerUnavailableError as err:
-            print(f"GUI unavailable: {err}")
-        return None
 
     pathfinder = YenPathFinder(handler)
     scheduler = Scheduler(pathfinder)
@@ -30,25 +26,17 @@ def main(file_path: str, show_gui: bool = False) -> int | None:
         print("No available paths")
         return None
     simulator = Simulator(handler, drone_paths)
+    if args.vis:
+        os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+        from pygame_visualizer import PygameVisualizer
+
+        PygameVisualizer(handler, simulator).run()
+        return None
+
     turns = simulator.run_drone()
     print(turns)
     return turns
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(
-        description="Route drones through a network of zones."
-    )
-    argument_parser.add_argument(
-        "map_file",
-        nargs="?",
-        default="test.txt",
-        help="path to the map configuration file",
-    )
-    argument_parser.add_argument(
-        "--gui",
-        action="store_true",
-        help="display the initial map with tkinter",
-    )
-    arguments = argument_parser.parse_args()
-    main(arguments.map_file, show_gui=arguments.gui)
+    main()

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -13,6 +14,7 @@ class DroneState(str, Enum):
     DELIVERED = "delivered"
 
 
+@dataclass(frozen=True)
 class DroneSnapshot:
     drone_id: int
     state: DroneState
@@ -21,10 +23,13 @@ class DroneSnapshot:
     transit_to: str | None
 
 
-class TurnSnapShot:
+@dataclass(frozen=True)
+class TurnSnapshot:
     turn: int
-    state: DroneState
-    zone: str | None
+    moves: tuple[str, ...]
+    drones: tuple[DroneSnapshot, ...]
+    finished: bool
+    deadlocked: bool
 
 
 class ZoneTypes(str, Enum):

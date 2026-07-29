@@ -2,6 +2,8 @@ PYTHON := .venv/bin/python
 VENV = .venv
 FLAKE8 := .venv/bin/flake8
 MYPY := .venv/bin/mypy
+MAP ?= test.txt
+ARGS ?=
 MYPYFLAGS = --warn-return-any --warn-unused-ignores \
 		--ignore-missing-imports --disallow-untyped-defs \
 		--check-untyped-defs
@@ -15,10 +17,10 @@ install: $(VENV)
 	uv pip install flake8 mypy
 
 run:
-	$(PYTHON) fly_in.py
+	$(PYTHON) fly_in.py $(MAP) $(ARGS)
 
 debug:
-	$(PYTHON) -m pdb fly_in.py
+	$(PYTHON) -m pdb fly_in.py $(MAP) $(ARGS)
 
 $(VENV):
 	uv venv $(VENV)
@@ -37,3 +39,4 @@ lint-strict:
 
 test:
 	$(PYTHON) -m pytest -q
+

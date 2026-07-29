@@ -1,3 +1,4 @@
+import argparse
 from typing import Any, Literal
 
 from pydantic import ValidationError
@@ -9,6 +10,19 @@ from .patterns import connection_parse_pattern, zone_parse_pattern
 
 
 class Parser:
+    def argument_parse(self) -> argparse.Namespace:
+        parser = argparse.ArgumentParser(description="Fly in")
+        parser.add_argument(
+            "map_file",
+            help="Path to map file",
+        )
+        parser.add_argument(
+            "--vis",
+            action="store_true",
+            help="Flag for visualization, default is False",
+        )
+        return parser.parse_args()
+
     def parse_line(
         self,
         text: str,
