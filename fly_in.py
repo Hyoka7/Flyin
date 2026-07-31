@@ -7,11 +7,16 @@ from simulator import Simulator
 
 
 def main() -> int | None:
+    """Parse arguments, build a schedule, and run the selected interface.
+
+    Returns:
+        Simulation turn count in terminal mode, otherwise None.
+    """
     parser = Parser()
     try:
         args = parser.argument_parse()
-    except Exception as err:
-        print(f"Parser Error: {err}")
+    except SystemExit:
+        return None
     file_path = args.map_file
     parse_res = parser.parse_file(file_path)
     if parse_res is None:
@@ -29,12 +34,10 @@ def main() -> int | None:
     if args.vis:
         os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
         from pygame_visualizer import PygameVisualizer
-
         PygameVisualizer(handler, simulator).run()
         return None
 
     turns = simulator.run_drone()
-    print(turns)
     return turns
 
 

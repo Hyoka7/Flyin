@@ -33,6 +33,12 @@ class PygameVisualizer:
         graph: GraphHandler,
         simulator: Simulator,
     ) -> None:
+        """Initialize the window, layout, and complete turn timeline.
+
+        Args:
+            graph: Constructed graph containing drawable zones and edges.
+            simulator: Fresh simulator used to precompute visualization states.
+        """
         self.graph = graph
         self.simulator = simulator
         pygame.init()
@@ -43,7 +49,7 @@ class PygameVisualizer:
             (self.width, self.height),
             pygame.RESIZABLE,
         )
-        pygame.display.set_caption("Fly-in Pygame Visualizer")
+        pygame.display.set_caption("Fly-in Visualizer")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 22)
         self.small_font = pygame.font.Font(None, 17)
@@ -94,9 +100,9 @@ class PygameVisualizer:
                 return pygame.Color(zone.metadata.color)
             except ValueError:
                 pass
-        if zone.key == "start_hub":
+        elif zone.key == "start_hub":
             return pygame.Color("#16a34a")
-        if zone.key == "end_hub":
+        elif zone.key == "end_hub":
             return pygame.Color("#eab308")
         return pygame.Color(self.ZONE_COLORS[zone.metadata.zone])
 

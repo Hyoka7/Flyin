@@ -28,6 +28,13 @@ def print_color(
     color1: str = "yellow",
     color2: str = "black",
 ) -> None:
+    """Print an object using ANSI foreground and background colors.
+
+    Args:
+        txt: Object to print.
+        color1: Foreground color dictionary key.
+        color2: Background color dictionary key.
+    """
     print(
         back_color_dic[color2],
         text_color_dic[color1],

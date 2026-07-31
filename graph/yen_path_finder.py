@@ -7,7 +7,14 @@ from .graph_handler import GraphHandler
 
 
 class YenPathFinder:
+    """Generate alternative loopless routes with Yen's algorithm."""
+
     def __init__(self, graph: GraphHandler):
+        """Store the graph used for all path searches.
+
+        Args:
+            graph: Constructed graph handler.
+        """
         self.graph = graph
 
     def build_banned_connect(
@@ -15,6 +22,15 @@ class YenPathFinder:
         fixed_path: list[list[str]],
         curr_path: list[str],
     ) -> set[tuple[str, str]]:
+        """Find next edges that would recreate already accepted root paths.
+
+        Args:
+            fixed_path: Paths already accepted by Yen's algorithm.
+            curr_path: Root path currently being expanded.
+
+        Returns:
+            Undirected connection keys to exclude from the spur search.
+        """
         banned: set[tuple[str, str]] = set()
         curr_len = len(curr_path)
         for fixed in fixed_path:
@@ -30,6 +46,14 @@ class YenPathFinder:
         return banned
 
     def build_cumsum(self, path: list[str]) -> list[int]:
+        """Build cumulative movement costs for every path prefix.
+
+        Args:
+            path: Ordered zone names.
+
+        Returns:
+            Cumulative cost at each index, beginning with zero.
+        """
         cumsum = [0] * len(path)
         for i in range(1, len(path)):
             cost = self.graph.get_move_cost(path[i])
@@ -37,6 +61,14 @@ class YenPathFinder:
         return cumsum
 
     def build_priority_count(self, path: list[str]) -> int:
+        """Count priority destinations contained in a path.
+
+        Args:
+            path: Ordered zone names.
+
+        Returns:
+            Number of priority zones after the starting zone.
+        """
         return sum(
             1
             for zone_name in path[1:]
@@ -44,6 +76,14 @@ class YenPathFinder:
         )
 
     def find_k_paths(self, k: int) -> list[list[str]]:
+        """Return up to K minimum-cost loopless paths.
+
+        Args:
+            k: Maximum number of paths to generate.
+
+        Returns:
+            Accepted paths ordered by weighted cost and priority tie-breakers.
+        """
         if k <= 0:
             return []
         original_path = self.graph.dijkstra_path()

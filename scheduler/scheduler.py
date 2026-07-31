@@ -4,7 +4,14 @@ from graph import YenPathFinder
 
 
 class Scheduler:
+    """Select useful routes and assign one route to every drone."""
+
     def __init__(self, finder: YenPathFinder):
+        """Initialize a scheduler with a candidate path finder.
+
+        Args:
+            finder: Yen path finder bound to the target graph.
+        """
         self.finder: YenPathFinder = finder
 
     def _assign_paths(
@@ -12,6 +19,15 @@ class Scheduler:
         nb_drones: int,
         paths: list[list[str]],
     ) -> list[list[str]]:
+        """Distribute drones among a fixed set of candidate paths.
+
+        Args:
+            nb_drones: Number of routes that must be assigned.
+            paths: Candidate paths available for assignment.
+
+        Returns:
+            One ordered zone path for each drone.
+        """
         drone_path = []
         path_costs = [self.finder.build_cumsum(path)[-1] for path in paths]
         path_pq: list[tuple[int, list[str]]] = []
@@ -24,6 +40,15 @@ class Scheduler:
         return drone_path
 
     def scheduling(self, nb_drones: int) -> list[list[str]]:
+        """Choose a route set that minimizes measured simulation turns.
+
+        Args:
+            nb_drones: Number of drones to schedule.
+
+        Returns:
+            The best simulated path assignment, or an empty list when the
+            goal is unreachable.
+        """
         from simulator import Simulator
 
         candidates = self.finder.find_k_paths(nb_drones)

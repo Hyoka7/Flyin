@@ -10,13 +10,21 @@ from .patterns import connection_parse_pattern, zone_parse_pattern
 
 
 class Parser:
+    """Parse CLI arguments and validate Fly-in map declarations."""
+
     def argument_parse(self) -> argparse.Namespace:
+        """Parse the map path and optional visualization flag.
+
+        Returns:
+            An argparse namespace containing `map_file` and `vis`.
+        """
         parser = argparse.ArgumentParser(description="Fly in")
         parser.add_argument(
             "map_file",
             help="Path to map file",
         )
         parser.add_argument(
+            "-v",
             "--vis",
             action="store_true",
             help="Flag for visualization, default is False",
@@ -29,6 +37,17 @@ class Parser:
         line_num: int,
         is_first: bool,
     ) -> dict[str, Any] | Literal[False] | None:
+        """Parse one meaningful map line into unvalidated field data.
+
+        Args:
+            text: Stripped input line.
+            line_num: One-based source line number for error reporting.
+            is_first: Whether this is the first meaningful declaration.
+
+        Returns:
+            Parsed fields, False after a reported error, or None for an
+            ignored blank or comment line.
+        """
         if text.startswith("#") or text == "":
             return None
         if is_first:
@@ -88,6 +107,15 @@ class Parser:
         line_num: int,
         data: dict[str, Any],
     ) -> Drone | Zone | Connection | Literal[False]:
+        """Convert parsed fields into the appropriate validated model.
+
+        Args:
+            line_num: One-based source line number for error reporting.
+            data: Raw fields produced by `parse_line`.
+
+        Returns:
+            A validated model, or False after a validation error.
+        """
         try:
             if "nb_drones" in data:
                 return Drone.model_validate(data)
@@ -103,8 +131,17 @@ class Parser:
         self,
         parse_res: list[Drone | Zone | Connection],
     ) -> list[Drone | Zone | Connection] | None:
+        """Validate relationships and uniqueness across all declarations.
+
+        Args:
+            parse_res: Models in their original declaration order.
+
+        Returns:
+            The unchanged model list when valid, otherwise None.
+        """
         zone_names: set[str] = set()
         connections: set[tuple[str, str]] = set()
+        coordinates: set[tuple[int, int]] = set()
         drone_count = 0
         start_hub_count = 0
         end_hub_count = 0
@@ -121,8 +158,11 @@ class Parser:
                 if result.name in zone_names:
                     print(f"Duplicate zone name: {result.name}")
                     return None
-
+                if (result.x, result.y) in coordinates:
+                    print(f"Duplicate coordinate: ({result.x},{result.y})")
+                    return None
                 zone_names.add(result.name)
+                coordinates.add((result.x, result.y))
                 if result.key == "start_hub":
                     start_hub_count += 1
                 elif result.key == "end_hub":
@@ -176,6 +216,14 @@ class Parser:
         self,
         path: str,
     ) -> list[Drone | Zone | Connection] | None:
+        """Read, parse, and validate a complete map file.
+
+        Args:
+            path: Path to the map configuration file.
+
+        Returns:
+            Validated declarations, or None after a reported error.
+        """
         results: list[Drone | Zone | Connection] = []
         is_first = True
         try:

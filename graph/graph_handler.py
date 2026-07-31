@@ -6,7 +6,14 @@ from utils import get_sorted_key
 
 
 class GraphHandler:
+    """Build and query the graph represented by validated map models."""
+
     def __init__(self, data: list[Drone | Zone | Connection]):
+        """Initialize empty graph indexes from parsed model data.
+
+        Args:
+            data: Validated drone, zone, and connection declarations.
+        """
         self.data = data
         self.zones: dict[str, Zone] = {}
         self.connection: dict[tuple[str, str], Connection] = {}
@@ -16,6 +23,7 @@ class GraphHandler:
         self.drone_count = 0
 
     def construct(self) -> None:
+        """Populate zone, connection, and adjacency indexes from input data."""
         for d in self.data:
             if isinstance(d, Connection):
                 self.neighbors[d.from_].append(d)
@@ -32,6 +40,15 @@ class GraphHandler:
                 self.drone_count = d.nb_drones
 
     def get_move_cost(self, zone_name: str) -> int:
+        """Return the turn cost of entering a zone.
+
+        Args:
+            zone_name: Destination zone name.
+
+        Returns:
+            Two for restricted zones, one for traversable one-turn zones, or
+            negative one for blocked zones.
+        """
         zone = self.zones[zone_name]
 
         if zone.metadata.zone == ZoneTypes.Restricted:
@@ -45,6 +62,16 @@ class GraphHandler:
         current: str,
         connection: Connection,
     ) -> str | None:
+        """Return the opposite endpoint of an incident connection.
+
+        Args:
+            current: Zone from which the connection is being inspected.
+            connection: Bidirectional connection to inspect.
+
+        Returns:
+            The opposite zone name, or None if the connection is not incident
+            to the current zone.
+        """
         if connection.from_ == current:
             return connection.to
         elif connection.to == current:
@@ -58,6 +85,19 @@ class GraphHandler:
         banned_connection: set[tuple[str, str]] | None = None,
         banned_node: set[str] | None = None,
     ) -> dict[str, float]:
+        """Calculate weighted minimum costs from a source to every zone.
+
+        Priority-zone count is used as a tie-breaker between equal-cost paths.
+
+        Args:
+            start: Source zone, defaulting to the graph start.
+            banned_connection: Connections excluded from this search.
+            banned_node: Zones excluded from this search.
+
+        Returns:
+            A mapping from zone name to minimum cost, with infinity for
+            unreachable zones.
+        """
         if start is None:
             start = self.start
         if banned_connection is None:
@@ -116,6 +156,16 @@ class GraphHandler:
         banned_connection: set[tuple[str, str]] | None = None,
         banned_node: set[str] | None = None,
     ) -> tuple[dict[str, float], dict[str, str | None]]:
+        """Calculate weighted distances and predecessor links.
+
+        Args:
+            start: Source zone, defaulting to the graph start.
+            banned_connection: Connections excluded from this search.
+            banned_node: Zones excluded from this search.
+
+        Returns:
+            A pair containing minimum costs and predecessor zone names.
+        """
         if start is None:
             start = self.start
         if banned_connection is None:
@@ -179,6 +229,18 @@ class GraphHandler:
         banned_connection: set[tuple[str, str]] | None = None,
         banned_node: set[str] | None = None,
     ) -> list[str]:
+        """Return one minimum-cost path between two zones.
+
+        Args:
+            start: Source zone, defaulting to the graph start.
+            end: Destination zone, defaulting to the graph goal.
+            banned_connection: Connections excluded from this search.
+            banned_node: Zones excluded from this search.
+
+        Returns:
+            Ordered zone names from source to destination, or an empty list
+            when no valid path exists.
+        """
         if start is None:
             start = self.start
         if end is None:

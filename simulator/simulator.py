@@ -4,7 +4,15 @@ from utils import get_sorted_key
 
 
 class SimDrone:
+    """Store mutable runtime state for one scheduled drone."""
+
     def __init__(self, drone_id: int, path: list[str]):
+        """Initialize a drone at the first zone of its assigned path.
+
+        Args:
+            drone_id: One-based identifier used in simulation output.
+            path: Ordered zones assigned to the drone.
+        """
         self.drone_id = drone_id
         self.path = path
         self.goaled = False
@@ -14,17 +22,27 @@ class SimDrone:
 
     @property
     def current_zone(self) -> str:
+        """Return the zone occupied before the drone's next movement."""
         return self.path[self.path_index]
 
     @property
     def next_zone(self) -> str | None:
+        """Return the next path zone, or None after the final zone."""
         if len(self.path) <= self.path_index + 1:
             return None
         return self.path[self.path_index + 1]
 
 
 class Simulator:
+    """Execute capacity-aware drone movements in discrete turns."""
+
     def __init__(self, graph: GraphHandler, drone_paths: list[list[str]]):
+        """Initialize occupancy, capacity, and per-drone runtime state.
+
+        Args:
+            graph: Constructed map graph.
+            drone_paths: One valid path for every graph drone.
+        """
         self.graph = graph
         self.turn = 0
         self.drone_paths = drone_paths
@@ -50,6 +68,14 @@ class Simulator:
         self,
         moves: tuple[str, ...] = (),
     ) -> TurnSnapshot:
+        """Create an immutable view of the current simulation state.
+
+        Args:
+            moves: Movement strings produced during the current turn.
+
+        Returns:
+            A snapshot containing every drone and completion status.
+        """
         snapshots: list[DroneSnapshot] = []
         for drone in self.drones:
             if drone.goaled:
@@ -86,6 +112,15 @@ class Simulator:
         )
 
     def step(self) -> TurnSnapshot:
+        """Advance all eligible drones by exactly one simulation turn.
+
+        Drones already in restricted transit arrive first. Remaining drones
+        are considered from farther to earlier path positions so a vacated
+        zone can be reused during the same turn.
+
+        Returns:
+            The immutable state after the completed turn.
+        """
         if self.remain_drone == 0 or self.deadlocked:
             return self.get_snapshot()
 
@@ -165,6 +200,14 @@ class Simulator:
         return self.get_snapshot(tuple(moves))
 
     def run_drone(self, logging: bool = True) -> int | None:
+        """Run turns until delivery or deadlock.
+
+        Args:
+            logging: Whether to print required movement lines.
+
+        Returns:
+            Total completed turns, or None when a deadlock occurs.
+        """
         while self.remain_drone > 0 and not self.deadlocked:
             snapshot = self.step()
             if snapshot.moves and logging:
