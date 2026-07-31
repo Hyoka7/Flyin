@@ -100,7 +100,7 @@ make run MAP=maps/easy/01_linear_path.txt
 The equivalent direct command is:
 
 ```bash
-.venv/bin/python fly_in.py maps/easy/01_linear_path.txt
+uv run fly_in.py maps/easy/01_linear_path.txt
 ```
 
 Each output line represents one simulation turn and contains only drones that
@@ -119,7 +119,7 @@ make run MAP=test.txt ARGS=-v
 or:
 
 ```bash
-.venv/bin/python fly_in.py test.txt --vis
+uv run fly_in.py test.txt --vis
 ```
 
 Visualizer controls:
@@ -146,11 +146,14 @@ and two-turn movements easier to understand than terminal output alone.
 make debug MAP=test.txt
 make lint
 make lint-strict
+make test
 make clean
 ```
 
 `make lint` runs the mandatory `flake8` and `mypy` checks. `make lint-strict`
-uses `mypy --strict` for stronger static checking.
+uses `mypy --strict` for stronger static checking, while `make test` invokes
+Pytest through `uv run`. The `run`, `debug`, lint, and test targets all execute
+their Python tools in the uv-managed project environment.
 
 ## Input format
 
