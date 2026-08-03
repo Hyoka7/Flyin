@@ -1,6 +1,6 @@
 from heapq import heappop, heappush
 
-from graph import YenPathFinder
+from yen_path_finder import YenPathFinder
 
 
 class Scheduler:

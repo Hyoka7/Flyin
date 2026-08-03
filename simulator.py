@@ -1,6 +1,6 @@
-from graph import GraphHandler
+from graph_handler import GraphHandler
 from models import DroneSnapshot, DroneState, TurnSnapshot, ZoneTypes
-from utils import get_sorted_key
+from util import get_sorted_key
 
 
 class SimDrone:
@@ -213,7 +213,5 @@ class Simulator:
             if snapshot.moves and logging:
                 print(*snapshot.moves)
         if self.deadlocked:
-            if logging:
-                print("Dead Lock Happened!")
             return None
         return self.turn

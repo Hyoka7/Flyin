@@ -2,7 +2,7 @@ from collections import defaultdict
 from heapq import heappop, heappush
 
 from models import Connection, Drone, Zone, ZoneTypes
-from utils import get_sorted_key
+from util import get_sorted_key
 
 
 class GraphHandler:

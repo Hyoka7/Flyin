@@ -1,3 +1,6 @@
+"""Provide shared helpers for graph connections."""
+
+
 def get_sorted_key(s1: str, s2: str) -> tuple[str, str]:
     """Return an order-independent key for two connection endpoints.
 

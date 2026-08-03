@@ -4,9 +4,9 @@ from typing import Any, Literal
 from pydantic import ValidationError
 from pyparsing import ParseException
 
-from models import Connection, Drone, Zone
-
-from .patterns import connection_parse_pattern, zone_parse_pattern
+from colors import print_color
+from models import Connection, Drone, Zone, ZoneTypes
+from patterns import connection_parse_pattern, zone_parse_pattern
 
 
 class Parser:
@@ -60,7 +60,7 @@ class Parser:
                         raise ValueError()
                     return {key: int(value)}
             except ValueError:
-                print(
+                print_color(
                     f"Parse error on line {line_num}: "
                     "First line must be nb_drones: positive value"
                 )
@@ -96,7 +96,7 @@ class Parser:
                 }
                 return parse_dict
             except ParseException as err:
-                print(
+                print_color(
                     f"parse error on line {line_num} "
                     f"col {err.col}: {err.msg}"
                 )
@@ -124,7 +124,9 @@ class Parser:
             return Zone.model_validate(data)
         except ValidationError as err:
             message = err.errors()[0]["msg"]
-            print(f"Validation error on line {line_num}, {message}")
+            print_color(
+                f"Error: Validation error on line {line_num}, {message}"
+            )
             return False
 
     def validate_all_result(
@@ -150,41 +152,51 @@ class Parser:
             if isinstance(result, Drone):
                 drone_count += 1
                 if index != 0:
-                    print("nb_drones must be the first definition")
+                    print_color(
+                        "Error: nb_drones must be the first definition"
+                    )
                     return None
                 continue
 
             if isinstance(result, Zone):
                 if result.name in zone_names:
-                    print(f"Duplicate zone name: {result.name}")
+                    print_color(f"Error: Duplicate zone name: {result.name}")
                     return None
                 if (result.x, result.y) in coordinates:
-                    print(f"Duplicate coordinate: ({result.x},{result.y})")
+                    print_color(
+                        "Error: Duplicate coordinate: "
+                        f"({result.x},{result.y})"
+                    )
                     return None
                 zone_names.add(result.name)
                 coordinates.add((result.x, result.y))
                 if result.key == "start_hub":
                     start_hub_count += 1
+                    if result.metadata.zone == ZoneTypes.Blocked:
+                        print_color("Error: start hub is blocked")
+                        return None
                 elif result.key == "end_hub":
                     end_hub_count += 1
+                    if result.metadata.zone == ZoneTypes.Blocked:
+                        print_color("Error: end hub is blocked")
                 continue
 
             if result.from_ not in zone_names:
-                print(
-                    "Connection references an undefined zone: "
+                print_color(
+                    "Error: Connection references an undefined zone: "
                     f"{result.from_}"
                 )
                 return None
             if result.to not in zone_names:
-                print(
-                    "Connection references an undefined zone: "
+                print_color(
+                    "Error: Connection references an undefined zone: "
                     f"{result.to}"
                 )
                 return None
 
             if result.from_ == result.to:
-                print(
-                    f"Loop detected: {result.from_}-{result.to}"
+                print_color(
+                    f"Error: Loop detected: {result.from_}-{result.to}"
                 )
                 return None
 
@@ -193,21 +205,20 @@ class Parser:
                 max(result.from_, result.to),
             )
             if connection in connections:
-                print(
-                    "Duplicate connection: "
-                    f"{result.from_}-{result.to}"
+                print_color(
+                    f"Duplicate connection: {result.from_}-{result.to}"
                 )
                 return None
             connections.add(connection)
 
         if drone_count != 1:
-            print("nb_drones must be defined exactly once")
+            print_color("Error: nb_drones must be defined exactly once")
             return None
         if start_hub_count != 1:
-            print("start_hub must be defined exactly once")
+            print_color("Error: start_hub must be defined exactly once")
             return None
         if end_hub_count != 1:
-            print("end_hub must be defined exactly once")
+            print_color("Error: end_hub must be defined exactly once")
             return None
 
         return parse_res
@@ -246,5 +257,5 @@ class Parser:
                 return None
             return results
         except OSError as err:
-            print(f"Error while opening file: {err}")
+            print_color(f"Error while opening file: {err}")
             return None

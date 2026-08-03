@@ -4,7 +4,7 @@ import math
 
 import pygame
 
-from graph import GraphHandler
+from graph_handler import GraphHandler
 from models import (
     DroneSnapshot,
     DroneState,

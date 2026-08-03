@@ -1,3 +1,5 @@
+"""Provide ANSI color helpers for terminal output."""
+
 text_color_dic = {
     "black": "\033[30m",
     "red": "\033[31m",
@@ -10,34 +12,19 @@ text_color_dic = {
     "end": "\033[0m",
 }
 
-back_color_dic = {
-    "black": "\033[40m",
-    "red": "\033[41m",
-    "green": "\033[42m",
-    "yellow": "\033[43m",
-    "blue": "\033[44m",
-    "magenta": "\033[45m",
-    "cyan": "\033[46m",
-    "white": "\033[47m",
-    "end": "\033[0m",
-}
-
 
 def print_color(
     txt: object,
-    color1: str = "yellow",
-    color2: str = "black",
+    color: str = "red",
 ) -> None:
     """Print an object using ANSI foreground and background colors.
 
     Args:
         txt: Object to print.
-        color1: Foreground color dictionary key.
-        color2: Background color dictionary key.
+        color: Foreground color dictionary key.
     """
     print(
-        back_color_dic[color2],
-        text_color_dic[color1],
+        text_color_dic[color],
         txt,
         text_color_dic["end"],
     )

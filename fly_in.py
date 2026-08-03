@@ -1,9 +1,10 @@
 import os
 
-from graph import GraphHandler, YenPathFinder
-from parse import Parser
+from graph_handler import GraphHandler
+from parser import Parser
 from scheduler import Scheduler
 from simulator import Simulator
+from yen_path_finder import YenPathFinder
 
 
 def main() -> int | None:
@@ -28,7 +29,7 @@ def main() -> int | None:
     scheduler = Scheduler(pathfinder)
     drone_paths = scheduler.scheduling(handler.drone_count)
     if not drone_paths:
-        print("No available paths")
+        print("Aborting: No available path to goal")
         return None
     simulator = Simulator(handler, drone_paths)
     if args.vis:

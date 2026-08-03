@@ -1,3 +1,5 @@
+"""Define the pyparsing grammar used by the map parser."""
+
 from pyparsing import (
     Combine,
     Group,

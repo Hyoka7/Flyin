@@ -94,13 +94,13 @@ make run
 Run a specific map:
 
 ```bash
-make run MAP=maps/easy/01_linear_path.txt
+make run MAP=easy_01_linear_path.txt
 ```
 
 The equivalent direct command is:
 
 ```bash
-uv run fly_in.py maps/easy/01_linear_path.txt
+uv run fly_in.py easy_01_linear_path.txt
 ```
 
 Each output line represents one simulation turn and contains only drones that
@@ -312,21 +312,23 @@ map also completes below the 45-turn reference.
 
 ```text
 .
-├── fly_in.py                 # CLI entry point
-├── models.py                 # Validated models and immutable snapshots
-├── graph/
-│   ├── graph_handler.py      # Graph indexes and weighted Dijkstra
-│   └── yen_path_finder.py    # K-shortest loopless paths
-├── parse/
-│   ├── parse.py              # CLI and map validation
-│   └── patterns.py           # pyparsing grammar
-├── scheduler/
-│   └── scheduler.py          # Route selection and drone assignment
-├── simulator/
-│   └── simulator.py          # Capacity-aware turn engine
-├── pygame_visualizer/
-│   └── pygame_visualizer.py  # Smooth timeline animation
-├── maps/                     # Bundled benchmark maps
+├── fly_in.py              # CLI entry point
+├── parser.py              # CLI and map validation
+├── patterns.py            # pyparsing grammar
+├── models.py              # Validated models and immutable snapshots
+├── graph_handler.py       # Graph indexes and weighted Dijkstra
+├── yen_path_finder.py     # K-shortest loopless paths
+├── scheduler.py           # Route selection and drone assignment
+├── simulator.py           # Capacity-aware turn engine
+├── pygame_visualizer.py   # Smooth timeline animation
+├── util.py                # Shared connection-key helper
+├── colors.py              # ANSI terminal color helpers
+├── easy_*.txt             # Easy benchmark maps
+├── medium_*.txt           # Medium benchmark maps
+├── hard_*.txt             # Hard benchmark maps
+├── challenger_*.txt       # Challenger benchmark map
+├── test_*.txt             # Parser and scheduler test maps
+├── MAPS.md                # Benchmark map documentation
 ├── Makefile
 └── pyproject.toml
 ```
