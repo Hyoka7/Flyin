@@ -225,7 +225,7 @@ class PygameVisualizer:
                 self.screen.blit(label, center + pygame.Vector2(5, -18))
 
     def draw_zones(self) -> None:
-        """Draw zones over graph connections."""
+        """Draw zones and place their labels alternately above and below."""
         for zone in self.graph.zones.values():
             position = self.positions[zone.name]
             pygame.draw.circle(
@@ -241,12 +241,18 @@ class PygameVisualizer:
                 27,
                 2,
             )
+
+        for index, zone in enumerate(self.graph.zones.values()):
+            position = self.positions[zone.name]
+            offset = -37 if index % 2 == 0 else 37
             label = self.small_font.render(
                 zone.name,
                 True,
                 self.FOREGROUND,
             )
-            rect = label.get_rect(center=(position.x, position.y - 37))
+            rect = label.get_rect(
+                center=(position.x, position.y + offset)
+            )
             self.screen.blit(label, rect)
 
     def draw_drones(self) -> None:

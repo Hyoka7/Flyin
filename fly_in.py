@@ -1,5 +1,6 @@
 import os
 
+from colors import print_color
 from graph_handler import GraphHandler
 from parser import Parser
 from scheduler import Scheduler
@@ -29,7 +30,7 @@ def main() -> int | None:
     scheduler = Scheduler(pathfinder)
     drone_paths = scheduler.scheduling(handler.drone_count)
     if not drone_paths:
-        print("Aborting: No available path to goal")
+        print_color("Aborting: No available path to goal")
         return None
     simulator = Simulator(handler, drone_paths)
     if args.vis:

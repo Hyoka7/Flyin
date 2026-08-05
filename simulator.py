@@ -64,6 +64,26 @@ class Simulator:
         self.zone_occupancy[self.graph.start] = self.remain_drone
         self.deadlocked = False
 
+    def get_remaining_cost(self, drone: SimDrone) -> int:
+        """Return the number of turns remaining on a drone's path.
+
+        A restricted destination costs two turns. When the drone is already
+        in transit, the first of those two turns has already been consumed.
+
+        Args:
+            drone: Runtime drone whose remaining path is measured.
+
+        Returns:
+            Weighted movement cost from the current state to the goal.
+        """
+        cost = sum(
+            self.graph.get_move_cost(zone_name)
+            for zone_name in drone.path[drone.path_index + 1:]
+        )
+        if drone.is_transit:
+            cost -= 1
+        return cost
+
     def get_snapshot(
         self,
         moves: tuple[str, ...] = (),
@@ -114,9 +134,9 @@ class Simulator:
     def step(self) -> TurnSnapshot:
         """Advance all eligible drones by exactly one simulation turn.
 
-        Drones already in restricted transit arrive first. Remaining drones
-        are considered from farther to earlier path positions so a vacated
-        zone can be reused during the same turn.
+        Drones already in restricted transit arrive first. Drones farther
+        along their paths are considered next; at the same path index, the
+        drone with the lower remaining cost is considered first.
 
         Returns:
             The immutable state after the completed turn.
@@ -131,6 +151,7 @@ class Simulator:
             key=lambda drone: (
                 drone.is_transit,
                 drone.path_index,
+                -self.get_remaining_cost(drone),
                 -drone.drone_id,
             ),
             reverse=True,
