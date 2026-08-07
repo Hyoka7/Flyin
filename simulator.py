@@ -1,6 +1,6 @@
 from graph_handler import GraphHandler
 from models import DroneSnapshot, DroneState, TurnSnapshot, ZoneTypes
-from util import get_sorted_key
+from util import format_drone_id, format_path, get_sorted_key
 
 
 class SimDrone:
@@ -168,7 +168,9 @@ class Simulator:
                 transit_dest = drone.transit_dest
                 if transit_dest is None:
                     continue
-                moves.append(f"D{drone.drone_id}-{transit_dest}")
+                moves.append(
+                    f"{format_drone_id(drone.drone_id)}-{transit_dest}"
+                )
                 self.zone_occupancy[transit_dest] += 1
                 self.zone_reserved[transit_dest] -= 1
                 drone.is_transit = False
@@ -190,7 +192,8 @@ class Simulator:
                 drone.is_transit = True
                 drone.transit_dest = next_zone
                 moves.append(
-                    f"D{drone.drone_id}-{cur_zone}-{next_zone}"
+                    f"{format_drone_id(drone.drone_id)}-"
+                    f"{format_path(cur_zone, next_zone)}"
                 )
             else:
                 zone_is_full = (
@@ -209,7 +212,9 @@ class Simulator:
                 self.zone_occupancy[next_zone] += 1
                 self.zone_occupancy[cur_zone] -= 1
                 path_used[con_key] += 1
-                moves.append(f"D{drone.drone_id}-{next_zone}")
+                moves.append(
+                    f"{format_drone_id(drone.drone_id)}-{next_zone}"
+                )
                 drone.path_index += 1
                 if next_zone == self.graph.goal:
                     drone.goaled = True
