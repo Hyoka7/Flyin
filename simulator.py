@@ -181,7 +181,8 @@ class Simulator:
                 == ZoneTypes.Restricted
             ):
                 if (
-                    self.zone_reserved[next_zone]
+                    self.zone_occupancy[next_zone]
+                    + self.zone_reserved[next_zone]
                     >= self.zone_capacity[next_zone]
                     or path_used[con_key] >= self.path_capacity[con_key]
                 ):

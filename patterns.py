@@ -15,12 +15,12 @@ from pyparsing import (
 )
 
 key = Word(alphas + "_" + alphas)
-string = Word(alphas)
 zone_name = Regex(r"[^\s-]+")
 signs = one_of("+ -")
 number = Combine(Optional(signs) + Word(nums))
 separator = Suppress(":")
-key_value = key + Suppress("=") + (string | number)
+metadata_value = Regex(r"[^\s\[\]]+")
+key_value = key + Suppress("=") + metadata_value
 dct = Group(key_value)
 options = Optional(Suppress("[") + OneOrMore(dct) + Suppress("]"))
 zone_parse_pattern = key + separator + zone_name + number + number + options

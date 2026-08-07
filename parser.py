@@ -65,24 +65,7 @@ class Parser:
                     "First line must be nb_drones: positive value"
                 )
                 return False
-        else:
-            try:
-                parse_res = zone_parse_pattern.parse_string(
-                    text, parse_all=True
-                ).as_list()
-                metadata = dict(parse_res[4:])
-                if parse_res[0] in {"start_hub", "end_hub"}:
-                    metadata.pop("max_drones", None)
-                parse_dict = {
-                    "key": parse_res[0],
-                    "name": parse_res[1],
-                    "x": parse_res[2],
-                    "y": parse_res[3],
-                    "metadata": metadata,
-                }
-                return parse_dict
-            except ParseException:
-                pass
+        if text.startswith("connection:"):
             try:
                 parse_res = connection_parse_pattern.parse_string(
                     text, parse_all=True
@@ -96,11 +79,25 @@ class Parser:
                 }
                 return parse_dict
             except ParseException as err:
-                print_color(
-                    f"parse error on line {line_num} "
-                    f"col {err.col}: {err.msg}"
-                )
+                print_color(f"parse error on line {line_num} col {err.col}: {err.msg}")
                 return False
+
+        try:
+            parse_res = zone_parse_pattern.parse_string(text, parse_all=True).as_list()
+            metadata = dict(parse_res[4:])
+            if parse_res[0] in {"start_hub", "end_hub"}:
+                metadata.pop("max_drones", None)
+            parse_dict = {
+                "key": parse_res[0],
+                "name": parse_res[1],
+                "x": parse_res[2],
+                "y": parse_res[3],
+                "metadata": metadata,
+            }
+            return parse_dict
+        except ParseException as err:
+            print_color(f"parse error on line {line_num} col {err.col}: {err.msg}")
+            return False
 
     def validate_parse_result(
         self,
@@ -179,6 +176,7 @@ class Parser:
                     end_hub_count += 1
                     if result.metadata.zone == ZoneTypes.Blocked:
                         print_color("Error: end hub is blocked")
+                        return None
                 continue
 
             if result.from_ not in zone_names:

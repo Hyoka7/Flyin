@@ -62,9 +62,11 @@ flowchart TD
 
 ```bash
 make install
-make run MAP=test.txt
-make run MAP=test.txt ARGS=-v
+make run MAP=path/to/map
+make run MAP=path/to/map ARGS=-v
 ```
+
+Replace `path/to/map` with the path to the map file you want to simulate.
 
 ### Requirements
 
@@ -85,22 +87,16 @@ installs `flake8` and `mypy` for the mandatory lint targets.
 
 ### Terminal execution
 
-Run the default map:
+Run a map:
 
 ```bash
-make run
-```
-
-Run a specific map:
-
-```bash
-make run MAP=easy_01_linear_path.txt
+make run MAP=path/to/map
 ```
 
 The equivalent direct command is:
 
 ```bash
-uv run fly_in.py easy_01_linear_path.txt
+uv run fly_in.py path/to/map
 ```
 
 Each output line represents one simulation turn and contains only drones that
@@ -113,13 +109,13 @@ turn.
 Launch the Pygame visualizer with:
 
 ```bash
-make run MAP=test.txt ARGS=-v
+make run MAP=path/to/map ARGS=-v
 ```
 
 or:
 
 ```bash
-uv run fly_in.py test.txt --vis
+uv run fly_in.py path/to/map --vis
 ```
 
 Visualizer controls:
@@ -143,7 +139,7 @@ and two-turn movements easier to understand than terminal output alone.
 ### Debugging and code quality
 
 ```bash
-make debug MAP=test.txt
+make debug MAP=path/to/map
 make lint
 make lint-strict
 make test
@@ -209,11 +205,32 @@ visualizer from inventing movements that differ from the evaluated solution.
 
 ## Algorithm choices and implementation strategy
 
+### Complexity notation
+
+The complexity estimates below use the following symbols:
+
+| Symbol | Meaning |
+|---|---|
+| `V` | Number of zones (graph vertices) |
+| `E` | Number of bidirectional connections (graph edges) |
+| `N` | Number of drones |
+| `K` | Number of candidate paths requested from Yen's algorithm |
+| `P` | Number of paths currently available to the scheduler (`P <= K`) |
+| `L` | Maximum number of zones in a candidate path (`L <= V`) |
+| `T` | Number of turns completed by one simulation |
+
+Dictionary and set operations are treated as `O(1)` on average. Path copying,
+hashing, and comparison are not treated as constant: they may inspect up to
+`L` zone names.
+
 ### Graph representation
 
 `GraphHandler` stores zones by name, connections by a sorted endpoint tuple,
 and an adjacency list from each zone to its incident connections. Sorting the
 endpoint tuple gives both directions of a connection one shared capacity key.
+Constructing these indexes takes `O(V + E)` time and `O(V + E)` memory. Looking
+up a zone or a connection by its key is `O(1)` on average, while enumerating all
+neighbors of a zone costs `O(deg(v))`.
 
 ### Weighted Dijkstra search
 
@@ -223,8 +240,12 @@ blocked destinations are skipped. The priority queue also carries a priority
 score, so a route containing more priority zones wins when movement costs are
 equal.
 
-With `V` zones and `E` connections, one search using a binary heap takes
-`O((V + E) log V)` time and `O(V + E)` memory.
+One search initializes `O(V)` distance entries, examines every reachable
+connection, and performs binary-heap updates. Its time complexity is
+`O((V + E) log V)` and its auxiliary memory complexity is `O(V + E)`. The
+priority-zone tie-breaker adds one numeric value to each heap entry but does
+not change these asymptotic bounds. `dijkstra_path()` additionally reconstructs
+the predecessor chain in `O(L)` time and memory.
 
 ### Yen's K-shortest paths
 
@@ -234,9 +255,28 @@ paths are kept in a heap ordered by total cost, priority-zone count, and path.
 Root costs are cached as cumulative sums to avoid repeatedly calculating the
 same prefix cost.
 
-For `K` requested paths, the worst-case running time is approximately
-`O(K * V * (E + V) log V)`, depending on the number and length of generated spur
-paths.
+For every accepted path, the implementation examines at most `L - 1` spur
+positions. Each viable spur performs one `dijkstra_path()` search and a second
+`dijkstra_cost()` search used to score the candidate. The second search changes
+the constant factor, not the asymptotic Dijkstra term. Across `K` accepted
+paths, the graph-search work is therefore:
+
+```text
+O(K * L * (V + E) log V)
+```
+
+`build_banned_connect()` also scans previously accepted paths and compares
+their prefixes. In the worst case this contributes `O(K^2 * L^2)`. An
+implementation-aware upper bound is consequently:
+
+```text
+O(K * L * (V + E) log V + K^2 * L^2)
+```
+
+The accepted paths require `O(K * L)` memory. Up to `O(K * L)` candidate paths
+may remain in the heap and deduplication set, and each candidate stores up to
+`L` zone names. Including one Dijkstra workspace, the worst-case memory bound
+is `O(V + E + K * L^2)`.
 
 ### Route scheduling
 
@@ -249,6 +289,27 @@ adding longer routes that do not improve throughput.
 This optimization is intentionally simulation-aware: two routes with similar
 lengths may behave very differently when they share a small-capacity zone or
 connection.
+
+For a fixed set of `P` paths, `_assign_paths()` first calculates every path
+cost in `O(P * L)`, inserts the paths into a heap in `O(P log P)`, and performs
+one pop/push pair per drone in `O(N log P)`. One assignment therefore costs:
+
+```text
+O(P * L + (P + N) log P)
+```
+
+The scheduler evaluates all remaining candidates after each accepted
+improvement. If every candidate is accepted, it runs at most
+`1 + (K - 1) + ... + 1 = O(K^2)` silent simulations. If `S(T)` denotes the
+cost of one simulation, the scheduling phase after Yen path generation has the
+following conservative upper bound:
+
+```text
+O(K^2 * (K * L + (K + N) log K + S(T)))
+```
+
+In practice the loop usually stops much earlier because it terminates as soon
+as no remaining candidate reduces the measured turn count.
 
 ```mermaid
 flowchart TD
@@ -276,6 +337,33 @@ in transit and completes its arrival during the next call to `step()`.
 `run_drone()` repeatedly calls `step()`, so terminal and graphical execution use
 the same movement rules.
 
+During one `step()`, initializing per-connection usage costs `O(E)`. Sorting
+the drones costs `O(N log N)`, while the sort key calculates a remaining path
+cost by scanning up to `L` zones for each drone, adding `O(N * L)`. Movement
+checks and snapshot creation are both `O(N)`. Thus:
+
+```text
+one turn:       O(E + N * L + N log N)
+S(T) turns:     O(T * (E + N * L + N log N))
+```
+
+The simulator stores zone and connection tables, the assigned paths, mutable
+drone states, and one turn snapshot. Its terminal-mode memory use is
+`O(V + E + N * L)`. The Pygame visualizer deliberately stores every immutable
+snapshot to support backward stepping and reset, adding `O(T * N)` memory.
+
+### Complexity summary
+
+| Phase | Time | Additional memory |
+|---|---|---|
+| Graph construction | `O(V + E)` | `O(V + E)` |
+| One Dijkstra search | `O((V + E) log V)` | `O(V + E)` |
+| Yen path generation | `O(KL(V + E) log V + K^2L^2)` | `O(V + E + KL^2)` |
+| Assign `N` drones to `P` paths | `O(PL + (P + N) log P)` | `O(P + N)` |
+| One simulation turn | `O(E + NL + N log N)` | `O(V + E + N)` |
+| Terminal simulation | `O(T(E + NL + N log N))` | `O(V + E + NL)` |
+| Pygame timeline | Same simulation time | `O(V + E + NL + TN)` |
+
 ```mermaid
 stateDiagram-v2
     direction TB
@@ -295,11 +383,11 @@ The bundled maps currently complete in the following number of turns:
 | Map | Turns | Subject target |
 |---|---:|---:|
 | Easy: linear path | 4 | 6 |
-| Easy: simple fork | 4 | 8 |
+| Easy: simple fork | 6 | 8 |
 | Easy: basic capacity | 4 | 6 |
 | Medium: dead end trap | 8 | 12 |
-| Medium: circular loop | 10 | 15 |
-| Medium: priority puzzle | 6 | 12 |
+| Medium: circular loop | 15 | 15 |
+| Medium: priority puzzle | 7 | 12 |
 | Hard: maze nightmare | 13 | 30 |
 | Hard: capacity hell | 16 | 35 |
 | Hard: ultimate challenge | 26 | 45 |
@@ -323,12 +411,6 @@ map also completes below the 45-turn reference.
 ├── pygame_visualizer.py   # Smooth timeline animation
 ├── util.py                # Shared connection-key helper
 ├── colors.py              # ANSI terminal color helpers
-├── easy_*.txt             # Easy benchmark maps
-├── medium_*.txt           # Medium benchmark maps
-├── hard_*.txt             # Hard benchmark maps
-├── challenger_*.txt       # Challenger benchmark map
-├── test_*.txt             # Parser and scheduler test maps
-├── MAPS.md                # Benchmark map documentation
 ├── Makefile
 └── pyproject.toml
 ```
