@@ -79,11 +79,16 @@ class Parser:
                 }
                 return parse_dict
             except ParseException as err:
-                print_color(f"parse error on line {line_num} col {err.col}: {err.msg}")
+                print_color(
+                    f"parse error on line {line_num} "
+                    f"col {err.col}: {err.msg}"
+                )
                 return False
 
         try:
-            parse_res = zone_parse_pattern.parse_string(text, parse_all=True).as_list()
+            parse_res = zone_parse_pattern.parse_string(
+                text, parse_all=True
+            ).as_list()
             metadata = dict(parse_res[4:])
             if parse_res[0] in {"start_hub", "end_hub"}:
                 metadata.pop("max_drones", None)
@@ -96,7 +101,10 @@ class Parser:
             }
             return parse_dict
         except ParseException as err:
-            print_color(f"parse error on line {line_num} col {err.col}: {err.msg}")
+            print_color(
+                f"parse error on line {line_num} "
+                f"col {err.col}: {err.msg}"
+            )
             return False
 
     def validate_parse_result(
