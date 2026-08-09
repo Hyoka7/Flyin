@@ -10,7 +10,7 @@ MYPYFLAGS = --warn-return-any --warn-unused-ignores \
 
 export UV_LINK_MODE = copy
 
-.PHONY: install run debug clean lint lint-strict test
+.PHONY: install run debug clean lint lint-strict
 
 install: $(VENV)
 	$(UV) sync
@@ -26,7 +26,7 @@ $(VENV):
 	uv venv $(VENV)
 
 clean:
-	rm -rf .mypy_cache .pytest_cache
+	rm -rf .mypy_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 
 lint:
@@ -36,7 +36,3 @@ lint:
 lint-strict:
 	$(UV) run $(FLAKE8) .
 	$(UV) run $(MYPY) . --strict
-
-test:
-	$(UV) run -m pytest -q
-

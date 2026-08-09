@@ -142,14 +142,13 @@ and two-turn movements easier to understand than terminal output alone.
 make debug MAP=path/to/map
 make lint
 make lint-strict
-make test
 make clean
 ```
 
 `make lint` runs the mandatory `flake8` and `mypy` checks. `make lint-strict`
-uses `mypy --strict` for stronger static checking, while `make test` invokes
-Pytest through `uv run`. The `run`, `debug`, lint, and test targets all execute
-their Python tools in the uv-managed project environment.
+uses `mypy --strict` for stronger static checking. The `run`, `debug`, and
+lint targets all execute their Python tools in the uv-managed project
+environment.
 
 ## Input format
 
