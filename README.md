@@ -173,6 +173,10 @@ Connections may only reference zones defined earlier in the file. Zone names
 and coordinates must be unique. Start and end hubs ignore `max_drones` and have
 unlimited occupancy.
 
+`color` accepts Pygame color names and hexadecimal colors. The special value
+`rainbow` draws the zone with a horizontal rainbow gradient. Unrecognized
+colors fall back to the default color for the zone type.
+
 The example above produces a graph with two alternatives:
 
 ```mermaid

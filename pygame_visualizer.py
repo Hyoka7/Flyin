@@ -18,6 +18,7 @@ from simulator import Simulator
 class PygameVisualizer:
     """Animate turn snapshots using a 60 FPS Pygame loop."""
 
+    ZONE_RADIUS = 27
     BACKGROUND = (15, 23, 42)
     FOREGROUND = (241, 245, 249)
     CONNECTION = (100, 116, 139)
@@ -53,6 +54,9 @@ class PygameVisualizer:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 22)
         self.small_font = pygame.font.Font(None, 17)
+        self.rainbow_zone_surface = self.build_rainbow_surface(
+            self.ZONE_RADIUS
+        )
         self.positions: dict[str, pygame.Vector2] = {}
         self.rebuild_positions()
 
@@ -95,16 +99,72 @@ class PygameVisualizer:
 
     def get_zone_color(self, zone: Zone) -> pygame.Color:
         """Resolve configured colors with a safe fallback."""
-        if zone.metadata.color is not None:
+        color_name = zone.metadata.color
+        if color_name is not None and color_name.lower() != "rainbow":
             try:
-                return pygame.Color(zone.metadata.color)
+                return pygame.Color(color_name)
             except ValueError:
                 pass
-        elif zone.key == "start_hub":
+        elif color_name is None and zone.key == "start_hub":
             return pygame.Color("#16a34a")
-        elif zone.key == "end_hub":
+        elif color_name is None and zone.key == "end_hub":
             return pygame.Color("#eab308")
         return pygame.Color(self.ZONE_COLORS[zone.metadata.zone])
+
+    @staticmethod
+    def build_rainbow_surface(radius: int) -> pygame.Surface:
+        """Create a circular horizontal rainbow gradient.
+
+        Args:
+            radius: Radius of the generated circle in pixels.
+
+        Returns:
+            A transparent surface containing the rainbow circle.
+
+        Raises:
+            ValueError: If radius is not positive.
+        """
+        if radius <= 0:
+            raise ValueError("radius must be positive")
+        diameter = radius * 2 + 1
+        surface = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+        for x in range(diameter):
+            offset = x - radius
+            half_height = int(
+                math.sqrt(radius * radius - offset * offset)
+            )
+            color = pygame.Color(0)
+            color.hsva = (
+                300 * x / (diameter - 1),
+                90,
+                100,
+                100,
+            )
+            pygame.draw.line(
+                surface,
+                color,
+                (x, radius - half_height),
+                (x, radius + half_height),
+            )
+        return surface
+
+    def draw_zone_fill(
+        self,
+        zone: Zone,
+        position: pygame.Vector2,
+    ) -> None:
+        """Draw a solid or rainbow-colored zone interior."""
+        color_name = zone.metadata.color
+        if color_name is not None and color_name.lower() == "rainbow":
+            rect = self.rainbow_zone_surface.get_rect(center=position)
+            self.screen.blit(self.rainbow_zone_surface, rect)
+            return
+        pygame.draw.circle(
+            self.screen,
+            self.get_zone_color(zone),
+            position,
+            self.ZONE_RADIUS,
+        )
 
     def snapshot_position(
         self,
@@ -228,17 +288,12 @@ class PygameVisualizer:
         """Draw zones and place their labels alternately above and below."""
         for zone in self.graph.zones.values():
             position = self.positions[zone.name]
-            pygame.draw.circle(
-                self.screen,
-                self.get_zone_color(zone),
-                position,
-                27,
-            )
+            self.draw_zone_fill(zone, position)
             pygame.draw.circle(
                 self.screen,
                 self.FOREGROUND,
                 position,
-                27,
+                self.ZONE_RADIUS,
                 2,
             )
 
