@@ -257,11 +257,11 @@ class GraphHandler:
         if dists[end] == float("inf"):
             return []
         path = [end]
-        current: str | None = end
-        while current is not None and current != start:
+        current = end
+        while current != start:
             next_current = prev[current]
-            current = next_current
-            if current is None:
+            if next_current is None:
                 return []
+            current = next_current
             path.append(current)
         return path[::-1]

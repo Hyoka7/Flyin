@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import ClassVar
 
 import pygame
 
@@ -22,7 +23,7 @@ class PygameVisualizer:
     BACKGROUND = (15, 23, 42)
     FOREGROUND = (241, 245, 249)
     CONNECTION = (100, 116, 139)
-    ZONE_COLORS = {
+    ZONE_COLORS: ClassVar[dict[ZoneTypes, tuple[int, int, int]]] = {
         ZoneTypes.Normal: (59, 130, 246),
         ZoneTypes.Restricted: (249, 115, 22),
         ZoneTypes.Priority: (34, 197, 94),
