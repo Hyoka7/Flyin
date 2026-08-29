@@ -18,7 +18,9 @@ class Parser:
         Returns:
             An argparse namespace containing `map_file` and `vis`.
         """
-        parser = argparse.ArgumentParser(description="Fly in")
+        parser = argparse.ArgumentParser(
+            description="Fly in - Optimaze drone movements"
+        )
         parser.add_argument(
             "map_file",
             help="Path to map file",
@@ -56,7 +58,7 @@ class Parser:
                 if key != "nb_drones":
                     raise ValueError()
                 else:
-                    if int(value) < 0:
+                    if int(value) <= 0:
                         raise ValueError()
                     return {key: int(value)}
             except ValueError:
@@ -78,10 +80,10 @@ class Parser:
                     "metadata": metadata,
                 }
                 return parse_dict
-            except ParseException as err:
+            except ParseException:
                 print_color(
-                    f"parse error on line {line_num} "
-                    f"col {err.col}: {err.msg}"
+                    f"Parse error on line {line_num}: "
+                    "expected connection: <zone1>-<zone2> [metadata]"
                 )
                 return False
 
@@ -100,10 +102,10 @@ class Parser:
                 "metadata": metadata,
             }
             return parse_dict
-        except ParseException as err:
+        except ParseException:
             print_color(
-                f"parse error on line {line_num} "
-                f"col {err.col}: {err.msg}"
+                f"Parse error on line {line_num}: "
+                "expected <key>: <name> <x> <y> [metadata]"
             )
             return False
 

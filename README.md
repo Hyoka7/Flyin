@@ -118,6 +118,11 @@ or:
 uv run fly_in.py path/to/map --vis
 ```
 
+`-v` is an alias for `--vis`; it is not a verbose-output option. In
+visualization mode, the movement timeline is shown in the Pygame window and
+movement lines are not printed to the terminal. Omit `-v` to receive the
+required turn-by-turn terminal output.
+
 Visualizer controls:
 
 | Input | Action |
@@ -231,7 +236,7 @@ hashing, and comparison are not treated as constant: they may inspect up to
 `GraphHandler` stores zones by name, connections by a sorted endpoint tuple,
 and an adjacency list from each zone to its incident connections. Sorting the
 endpoint tuple gives both directions of a connection one shared capacity key.
-Constructing these indexes takes `O(V + E)` time and `O(V + E)` memory. Looking
+Constructing these indexes takes `O(V + E)` time. Looking
 up a zone or a connection by its key is `O(1)` on average, while enumerating all
 neighbors of a zone costs `O(deg(v))`.
 
@@ -245,7 +250,7 @@ equal.
 
 One search initializes `O(V)` distance entries, examines every reachable
 connection, and performs binary-heap updates. Its time complexity is
-`O((V + E) log V)` and its auxiliary memory complexity is `O(V + E)`. The
+`O((V + E) log V)`. The
 priority-zone tie-breaker adds one numeric value to each heap entry but does
 not change these asymptotic bounds. `dijkstra_path()` additionally reconstructs
 the predecessor chain in `O(L)` time and memory.
@@ -276,10 +281,6 @@ implementation-aware upper bound is consequently:
 O(K * L * (V + E) log V + K^2 * L^2)
 ```
 
-The accepted paths require `O(K * L)` memory. Up to `O(K * L)` candidate paths
-may remain in the heap and deduplication set, and each candidate stores up to
-`L` zone names. Including one Dijkstra workspace, the worst-case memory bound
-is `O(V + E + K * L^2)`.
 
 ### Route scheduling
 
@@ -350,22 +351,17 @@ one turn:       O(E + N * L + N log N)
 S(T) turns:     O(T * (E + N * L + N log N))
 ```
 
-The simulator stores zone and connection tables, the assigned paths, mutable
-drone states, and one turn snapshot. Its terminal-mode memory use is
-`O(V + E + N * L)`. The Pygame visualizer deliberately stores every immutable
-snapshot to support backward stepping and reset, adding `O(T * N)` memory.
-
 ### Complexity summary
 
-| Phase | Time | Additional memory |
+| Phase | Time |
 |---|---|---|
-| Graph construction | `O(V + E)` | `O(V + E)` |
-| One Dijkstra search | `O((V + E) log V)` | `O(V + E)` |
-| Yen path generation | `O(KL(V + E) log V + K^2L^2)` | `O(V + E + KL^2)` |
-| Assign `N` drones to `P` paths | `O(PL + (P + N) log P)` | `O(P + N)` |
-| One simulation turn | `O(E + NL + N log N)` | `O(V + E + N)` |
-| Terminal simulation | `O(T(E + NL + N log N))` | `O(V + E + NL)` |
-| Pygame timeline | Same simulation time | `O(V + E + NL + TN)` |
+| Graph construction | `O(V + E)` |
+| One Dijkstra search | `O((V + E) log V)` |
+| Yen path generation | `O(KL(V + E) log V + K^2L^2)` |
+| Assign `N` drones to `P` paths | `O(PL + (P + N) log P)` |
+| One simulation turn | `O(E + NL + N log N)` |
+| Terminal simulation | `O(T(E + NL + N log N))` |
+| Pygame timeline | Same simulation time |
 
 ```mermaid
 stateDiagram-v2

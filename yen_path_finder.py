@@ -1,9 +1,8 @@
 from heapq import heappop, heappush
 
+from graph_handler import GraphHandler
 from models import ZoneTypes
 from util import get_sorted_key
-
-from graph_handler import GraphHandler
 
 
 class YenPathFinder:
