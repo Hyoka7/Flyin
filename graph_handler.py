@@ -98,56 +98,11 @@ class GraphHandler:
             A mapping from zone name to minimum cost, with infinity for
             unreachable zones.
         """
-        if start is None:
-            start = self.start
-        if banned_connection is None:
-            banned_connection = set()
-        if banned_node is None:
-            banned_node = set()
-        dists = {name: float("inf") for name in self.zones}
-        priority_scores = {name: float("inf") for name in self.zones}
-        dists[start] = 0
-        priority_scores[start] = 0
-        pq: list[tuple[float, float, str]] = []
-        heappush(pq, (0, 0, start))
-        while pq:
-            cur_cost, priority_count, zone_name = heappop(pq)
-            if (cur_cost, priority_count) != (
-                dists[zone_name],
-                priority_scores[zone_name],
-            ):
-                continue
-            for connection in self.neighbors[zone_name]:
-                neighbor = self.get_neighbor_name(
-                    zone_name,
-                    connection,
-                )
-                if neighbor is None:
-                    continue
-                con_key = get_sorted_key(zone_name, neighbor)
-                if con_key in banned_connection or neighbor in banned_node:
-                    continue
-                new_priority_count = priority_count
-                if self.zones[neighbor].metadata.zone == ZoneTypes.Priority:
-                    new_priority_count -= 1
-                move_cost = self.get_move_cost(neighbor)
-                if move_cost == -1:
-                    continue
-                new_cost = cur_cost + move_cost
-                if (new_cost, new_priority_count) < (
-                    dists[neighbor],
-                    priority_scores[neighbor],
-                ):
-                    dists[neighbor] = new_cost
-                    priority_scores[neighbor] = new_priority_count
-                    heappush(
-                        pq,
-                        (
-                            new_cost,
-                            new_priority_count,
-                            neighbor,
-                        ),
-                    )
+        dists, _ = self._dijkstra(
+            start,
+            banned_connection,
+            banned_node,
+        )
         return dists
 
     def _dijkstra(
