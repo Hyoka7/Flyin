@@ -159,13 +159,13 @@ class PygameVisualizer:
         if color_name is not None and color_name.lower() == "rainbow":
             rect = self.rainbow_zone_surface.get_rect(center=position)
             self.screen.blit(self.rainbow_zone_surface, rect)
-            return
-        pygame.draw.circle(
-            self.screen,
-            self.get_zone_color(zone),
-            position,
-            self.ZONE_RADIUS,
-        )
+        else:
+            pygame.draw.circle(
+                self.screen,
+                self.get_zone_color(zone),
+                position,
+                self.ZONE_RADIUS,
+            )
 
     def snapshot_position(
         self,

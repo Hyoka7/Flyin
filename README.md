@@ -432,6 +432,4 @@ AI assistance was used as a development aid for reviewing requirements,
 explaining graph algorithms, diagnosing parser and simulation bugs, proposing
 edge-case tests, checking type annotations, and drafting documentation. It was
 also used to discuss the Pygame animation structure and route-selection
-trade-offs. The project owner implemented, tested, reviewed, and adjusted the
-final parser, graph algorithms, scheduler, simulator, and visualizer, and is
-responsible for understanding and explaining the submitted code.
+trade-offs.

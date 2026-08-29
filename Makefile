@@ -26,8 +26,11 @@ $(VENV):
 	uv venv $(VENV)
 
 clean:
-	rm -rf .mypy_cache
+	rm -rf .mypy_cache .pytest_cache .ruff_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
+
+fclean: clean
+	rm -rf $(VENV)
 
 lint:
 	$(UV) run $(FLAKE8) .
