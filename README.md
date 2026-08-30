@@ -236,9 +236,7 @@ hashing, and comparison are not treated as constant: they may inspect up to
 `GraphHandler` stores zones by name, connections by a sorted endpoint tuple,
 and an adjacency list from each zone to its incident connections. Sorting the
 endpoint tuple gives both directions of a connection one shared capacity key.
-Constructing these indexes takes `O(V + E)` time. Looking
-up a zone or a connection by its key is `O(1)` on average, while enumerating all
-neighbors of a zone costs `O(deg(v))`.
+Constructing these indexes creates the lookup tables used by the algorithms.
 
 ### Weighted Dijkstra search
 
@@ -250,10 +248,8 @@ equal.
 
 One search initializes `O(V)` distance entries, examines every reachable
 connection, and performs binary-heap updates. Its time complexity is
-`O((V + E) log V)`. The
-priority-zone tie-breaker adds one numeric value to each heap entry but does
-not change these asymptotic bounds. `dijkstra_path()` additionally reconstructs
-the predecessor chain in `O(L)` time and memory.
+`O((V + E) log V)`. The priority-zone tie-breaker adds one numeric value to
+each heap entry but does not change these asymptotic bounds.
 
 ### Yen's K-shortest paths
 
@@ -294,26 +290,8 @@ This optimization is intentionally simulation-aware: two routes with similar
 lengths may behave very differently when they share a small-capacity zone or
 connection.
 
-For a fixed set of `P` paths, `_assign_paths()` first calculates every path
-cost in `O(P * L)`, inserts the paths into a heap in `O(P log P)`, and performs
-one pop/push pair per drone in `O(N log P)`. One assignment therefore costs:
-
-```text
-O(P * L + (P + N) log P)
-```
-
-The scheduler evaluates all remaining candidates after each accepted
-improvement. If every candidate is accepted, it runs at most
-`1 + (K - 1) + ... + 1 = O(K^2)` silent simulations. If `S(T)` denotes the
-cost of one simulation, the scheduling phase after Yen path generation has the
-following conservative upper bound:
-
-```text
-O(K^2 * (K * L + (K + N) log K + S(T)))
-```
-
-In practice the loop usually stops much earlier because it terminates as soon
-as no remaining candidate reduces the measured turn count.
+The scheduler evaluates remaining candidates with silent simulations and keeps
+only route sets that reduce the measured completion turn.
 
 ```mermaid
 flowchart TD
@@ -341,27 +319,12 @@ in transit and completes its arrival during the next call to `step()`.
 `run_drone()` repeatedly calls `step()`, so terminal and graphical execution use
 the same movement rules.
 
-During one `step()`, initializing per-connection usage costs `O(E)`. Sorting
-the drones costs `O(N log N)`, while the sort key calculates a remaining path
-cost by scanning up to `L` zones for each drone, adding `O(N * L)`. Movement
-checks and snapshot creation are both `O(N)`. Thus:
-
-```text
-one turn:       O(E + N * L + N log N)
-S(T) turns:     O(T * (E + N * L + N log N))
-```
-
 ### Complexity summary
 
 | Phase | Time |
 |---|---|---|
-| Graph construction | `O(V + E)` |
 | One Dijkstra search | `O((V + E) log V)` |
 | Yen path generation | `O(KL(V + E) log V + K^2L^2)` |
-| Assign `N` drones to `P` paths | `O(PL + (P + N) log P)` |
-| One simulation turn | `O(E + NL + N log N)` |
-| Terminal simulation | `O(T(E + NL + N log N))` |
-| Pygame timeline | Same simulation time |
 
 ```mermaid
 stateDiagram-v2
